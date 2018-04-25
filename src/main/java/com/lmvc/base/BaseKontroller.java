@@ -1,20 +1,44 @@
+/**
+ *    Copyright (C) 2018 Loophole, LLC
+ *
+ *    This program is free software: you can redistribute it and/or  modify
+ *    it under the terms of the GNU Affero General Public License, version 3,
+ *    as published by the Free Software Foundation.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    As a special exception, the copyright holders give permission to link the
+ *    code of portions of this program with the OpenSSL library under certain
+ *    conditions as described in each individual source file and distribute
+ *    linked combinations including the program with the OpenSSL library. You
+ *    must comply with the GNU Affero General Public License in all respects for
+ *    all of the code used other than as permitted herein. If you modify file(s)
+ *    with this exception, you may extend this exception to your version of the
+ *    file(s), but you are not obligated to do so. If you do not wish to do so,
+ *    delete this exception statement from your version. If you delete this
+ *    exception statement from all source files in the program, then also delete
+ *    it in the license file.
+ */
 package com.lmvc.base;
 
 import com.lmvc.annotation.Kontrol;
 import com.lmvc.annotation.MethodType;
 import com.lmvc.annotation.Model;
 import com.lmvc.annotation.Validate;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.thymeleaf.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
 
@@ -79,6 +103,14 @@ public class BaseKontroller {
                 }
             }
         }
+    }
+
+    private static List<Field> getAllFields(Class<?> type) {
+        List<Field> fields = new ArrayList<Field>();
+        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+            fields.addAll(Arrays.asList(c.getDeclaredFields()));
+        }
+        return fields;
     }
 
     /**
@@ -147,13 +179,14 @@ public class BaseKontroller {
                                         field.setAccessible(true);
                                         if (field.get(ctrl) != null) {
                                             request.setAttribute(v.name(), field.get(ctrl));
-                                        }
-                                        else {
-                                            if(field.getType().getDeclaredConstructor() != null) {
+                                        } else {
+                                            request.setAttribute(v.name(), null);
+                                            try {
                                                 request.setAttribute(v.name(), field.getType().getDeclaredConstructor().newInstance());
-                                            } else {
-                                                request.setAttribute(v.name(), null);
+                                            } catch (NoSuchMethodException ex){
+                                               //ignore exception
                                             }
+
                                         }
                                     }
                                 }
@@ -179,61 +212,111 @@ public class BaseKontroller {
 
         if (param != null) {
 
+            Map<String, String> requestMap = new HashMap<>();
             for (String name : param.split("\\.")) {
                 for (Field field : getAllFields(ctrl.getClass())) {
                     Model v = field.getAnnotation(Model.class);
-                    Map<String, String> map = new HashMap<>();
 
                     String key = null;
-                    if(name.contains("[")) {
-                        key = name.replaceAll(".*\\[","").replaceAll("\\'","").replaceAll("\\].*","");
+                    if (name.contains("[")) {
+                        key = name.replaceAll(".*\\[", "").replaceAll("\\'", "").replaceAll("\\].*", "");
                         name = name.substring(0, name.indexOf("["));
-                        log.debug("n " + key);
-                        log.debug("n " + name);
+                        requestMap.put(key, request.getParameter(param));
                     }
                     if ((v == null && field.getName().equals(name)) || (v != null && name.equals(v.name()))) {
                         field.setAccessible(true);
-                        if(key != null) {
-                            log.debug("v " + request.getParameter(param));
-                            map.put(key, request.getParameter(param));
-                            field.set(ctrl, request.getParameter(param));
-                        }
-                        else if (field.getType().getName().equals("java.lang.String")) {
-                            field.set(ctrl, request.getParameter(param));
-                        } else if (field.getType().getName().equals("java.lang.Boolean")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Boolean.parseBoolean(request.getParameter(param)));
+                        if (!requestMap.isEmpty() && field.getType().getName().equals("java.util.Map")) {
+                            Type type = field.getGenericType();
+                            if (type instanceof ParameterizedType) {
+                                Type keyType = ((ParameterizedType) type).getActualTypeArguments()[0];
+                                Type valueType = ((ParameterizedType) type).getActualTypeArguments()[1];
+                                Map map = Map.class.cast(field.get(ctrl));
+                                for (String k : requestMap.keySet()) {
+                                    Object keyOb = null;
+                                    Object valOb = null;
+                                    try {
+                                        Class<?> theClass = Class.forName(keyType.getTypeName());
+                                        Constructor<?> cons = theClass.getConstructor(String.class);
+                                        keyOb = cons.newInstance(k);
+
+                                        theClass = Class.forName(valueType.getTypeName());
+                                        cons = theClass.getConstructor(String.class);
+                                        valOb = cons.newInstance(requestMap.get(k));
+                                        log.debug("Setting " + param + " : " + keyOb + " -  " + valOb);
+                                    } catch (ClassNotFoundException ex) {
+                                        log.error(ex.toString(), ex);
+                                    }
+                                    map.put(keyOb, valOb);
+                                }
+                                field.set(ctrl, map);
                             }
-                        } else if (field.getType().getName().equals("java.lang.Byte")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Byte.parseByte(request.getParameter(param)));
+                        } else if (field.getType().getName().equals("java.util.List") && request.getParameter(param) != null) {
+
+                            Map<String, String[]> parameterMap = request.getParameterMap();
+                            Type type = field.getGenericType();
+                            if (type instanceof ParameterizedType) {
+                                Type valueType = ((ParameterizedType) type).getActualTypeArguments()[0];
+                                List list = List.class.cast(field.get(ctrl));
+                                for (String p : parameterMap.get(param)) {
+                                    Object valOb = null;
+                                    try {
+                                        Class<?> theClass = Class.forName(valueType.getTypeName());
+                                        Constructor<?> cons = theClass.getConstructor(String.class);
+                                        valOb = cons.newInstance(p);
+                                        log.debug("Setting " + param + " : " + valOb);
+                                    } catch (ClassNotFoundException ex) {
+                                        log.error(ex.toString(), ex);
+                                    }
+                                    list.add(valOb);
+                                }
+                                field.set(ctrl, list);
                             }
-                        } else if (field.getType().getName().equals("java.lang.Character")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, request.getParameter(param).charAt(0));
+
+                        } else {
+                            log.debug("Setting " + param + " : " + request.getParameter(param));
+                            if (field.getType().getName().equals("java.lang.String")) {
+                                field.set(ctrl, request.getParameter(param));
+                            } else if (field.getType().getName().equals("java.lang.Boolean")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Boolean.parseBoolean(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Byte")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Byte.parseByte(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Character")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, request.getParameter(param).charAt(0));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Double")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Double.parseDouble(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Float")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Float.parseFloat(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Integer")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Integer.parseInt(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Long")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Long.parseLong(request.getParameter(param)));
+                                }
+                            } else if (field.getType().getName().equals("java.lang.Short")) {
+                                if (!StringUtils.isEmpty(request.getParameter(param))) {
+                                    field.set(ctrl, Short.parseShort(request.getParameter(param)));
+                                }
+                            } else if (field.get(ctrl) == null) {
+                                field.set(ctrl, null);
+                                try {
+                                    field.set(ctrl, field.getType().getDeclaredConstructor().newInstance());
+                                } catch (NoSuchMethodException ex){
+                                    //ignore exception
+                                }
                             }
-                        } else if (field.getType().getName().equals("java.lang.Double")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Double.parseDouble(request.getParameter(param)));
-                            }
-                        } else if (field.getType().getName().equals("java.lang.Float")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Float.parseFloat(request.getParameter(param)));
-                            }
-                        } else if (field.getType().getName().equals("java.lang.Integer")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Integer.parseInt(request.getParameter(param)));
-                            }
-                        } else if (field.getType().getName().equals("java.lang.Long")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Long.parseLong(request.getParameter(param)));
-                            }
-                        } else if (field.getType().getName().equals("java.lang.Short")) {
-                            if (!StringUtils.isEmpty(request.getParameter(param))) {
-                                field.set(ctrl, Short.parseShort(request.getParameter(param)));
-                            }
-                        } else if (field.get(ctrl) == null) {
-                            field.set(ctrl, field.getType().getDeclaredConstructor().newInstance());
+
                         }
                         ctrl = field.get(ctrl);
                     }
@@ -241,14 +324,6 @@ public class BaseKontroller {
             }
         }
 
-    }
-
-    private static List<Field> getAllFields(Class<?> type) {
-        List<Field> fields = new ArrayList<Field>();
-        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
-            fields.addAll(Arrays.asList(c.getDeclaredFields()));
-        }
-        return fields;
     }
 
     /**
