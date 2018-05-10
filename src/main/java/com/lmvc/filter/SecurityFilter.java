@@ -55,8 +55,8 @@ public class SecurityFilter implements Filter {
     private static final SecureRandom random = new SecureRandom();
 
     // x-frame-options header
-    private static final String X_FRAME_HEADER = "X-Frame-Options";
-    private static final String X_FRAME_VALUE = "SAMEORIGIN";
+    private static final String CSP_HEADER = "Content-Security-Policy";
+    private static final String CSP_VALUE = "frame-ancestors 'self';";
 
     // strict-transport-security header
     private static final String TRANSPORT_SECURITY_HEADER = "Strict-Transport-Security";
@@ -73,21 +73,23 @@ public class SecurityFilter implements Filter {
 
 
         // click jacking header
-        httpServletResponse.addHeader(X_FRAME_HEADER, X_FRAME_VALUE);
+        httpServletResponse.addHeader(CSP_HEADER, CSP_VALUE);
 
         // transport security header
         httpServletResponse.addHeader(TRANSPORT_SECURITY_HEADER, TRANSPORT_SECURITY_VALUE);
 
         // csrf check
+        log.debug("CSRF parameter token is " + request.getParameter(_CSRF));
+        log.debug("CSRF sesson token is " + httpServletRequest.getSession().getAttribute(_CSRF));
         String _csrf = (String) httpServletRequest.getSession().getAttribute(_CSRF);
         if (_csrf == null || _csrf.equals(request.getParameter(_CSRF))) {
-            log.debug("CSRF token is valid");
+            log.debug("CSRF token is valid for " + httpServletRequest.getRequestURL());
             _csrf = (new BigInteger(165, random)).toString(36).toUpperCase();
             httpServletRequest.getSession().setAttribute(_CSRF, _csrf);
             filterChain.doFilter(request, response);
             return;
         }
-        log.debug("CSRF token is invalid");
+        log.debug("CSRF token is invalid for " + httpServletRequest.getRequestURL());
         httpServletRequest.getSession().invalidate();
         log.debug("Session invalidated");
         httpServletResponse.sendRedirect("/");
