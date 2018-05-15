@@ -25,9 +25,9 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-package com.lmvc.base;
+package loophole.mvc.base;
 
-import com.lmvc.filter.SecurityFilter;
+import loophole.mvc.filter.SecurityFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

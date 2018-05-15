@@ -25,10 +25,10 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-package com.lmvc.filter;
+package loophole.mvc.filter;
 
-import com.lmvc.base.DispatcherServlet;
-import com.lmvc.base.TemplateServlet;
+import loophole.mvc.base.DispatcherServlet;
+import loophole.mvc.base.TemplateServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,8 +84,10 @@ public class SecurityFilter implements Filter {
         String _csrf = (String) httpServletRequest.getSession().getAttribute(_CSRF);
         if (_csrf == null || _csrf.equals(request.getParameter(_CSRF))) {
             log.debug("CSRF token is valid for " + httpServletRequest.getRequestURL());
-            _csrf = (new BigInteger(165, random)).toString(36).toUpperCase();
-            httpServletRequest.getSession().setAttribute(_CSRF, _csrf);
+            if(_csrf == null || httpServletRequest.getMethod().equalsIgnoreCase("POST")) {
+                _csrf = (new BigInteger(165, random)).toString(36).toUpperCase();
+                httpServletRequest.getSession().setAttribute(_CSRF, _csrf);
+            }
             filterChain.doFilter(request, response);
             return;
         }

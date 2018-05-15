@@ -25,18 +25,19 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-package com.lmvc.annotation;
+package loophole.mvc.annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public enum MethodType {
+    GET("GET"), POST("POST");
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+    private String method;
 
-public @interface Kontrol {
-    String path();
-    MethodType method();
+    MethodType(String method) {
+        this.method = method;
+    }
+
+    public String toString() {
+        return method.toString();
+    }
+
 }
-

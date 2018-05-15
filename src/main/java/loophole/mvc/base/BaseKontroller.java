@@ -25,12 +25,12 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-package com.lmvc.base;
+package loophole.mvc.base;
 
-import com.lmvc.annotation.Kontrol;
-import com.lmvc.annotation.MethodType;
-import com.lmvc.annotation.Model;
-import com.lmvc.annotation.Validate;
+import loophole.mvc.annotation.Kontrol;
+import loophole.mvc.annotation.MethodType;
+import loophole.mvc.annotation.Model;
+import loophole.mvc.annotation.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -25,43 +25,18 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-package com.lmvc.base;
+package loophole.mvc.annotation;
 
-import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 
-import com.lmvc.config.TemplateConfig;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
-
-@WebServlet("*" + TemplateServlet.VIEW_EXT)
-public class TemplateServlet extends HttpServlet {
-
-    public static final String VIEW_EXT = ".html";
-    private static final long serialVersionUID = 411L;
-
-    public TemplateServlet() {
-        super();
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        TemplateEngine engine = TemplateConfig.getTemplateEngine(request.getServletContext());
-        WebContext context = new WebContext(request, response, request.getServletContext());
-        String uri = request.getRequestURI().replaceAll("\\" + TemplateServlet.VIEW_EXT + ".*", "");
-        engine.process(uri, context, response.getWriter());
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-        doGet(request, response);
-    }
+public @interface Kontrol {
+    String path();
+    MethodType method();
 }
+
