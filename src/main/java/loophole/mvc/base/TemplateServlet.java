@@ -53,7 +53,7 @@ public class TemplateServlet extends HttpServlet {
 
         TemplateEngine engine = TemplateConfig.getTemplateEngine(request.getServletContext());
         WebContext context = new WebContext(request, response, request.getServletContext());
-        String uri = request.getRequestURI().replaceAll("\\" + TemplateServlet.VIEW_EXT + ".*", "").replaceAll(request.getContextPath(), "/");
+        String uri = request.getRequestURI().replaceAll("\\" + TemplateServlet.VIEW_EXT + ".*", "").replaceAll("^" + request.getContextPath(), "");
         engine.process(uri, context, response.getWriter());
     }
 

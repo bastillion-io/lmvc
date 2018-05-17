@@ -84,7 +84,7 @@ public class DispatcherServlet extends HttpServlet {
                 response.sendRedirect(forward);
 
             } else {
-                forward = request.getContextPath() + forward.replaceAll("forward:", "");
+                forward = forward.replaceAll("forward:", "");
                 log.debug("forward: " + forward);
                 request.getRequestDispatcher(forward)
                         .forward(request, response);
