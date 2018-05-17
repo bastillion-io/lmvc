@@ -76,15 +76,17 @@ public class DispatcherServlet extends HttpServlet {
 
         if (forward != null) {
             if (forward.contains("redirect:")) {
-                log.debug(forward);
                 //add csrf to redirect
                 forward = forward.contains("?") ? forward + "&" : forward + "?";
                 forward = forward + SecurityFilter._CSRF + "=" + request.getSession().getAttribute(SecurityFilter._CSRF);
-                response.sendRedirect(forward.replaceAll("redirect:", ""));
+                forward = request.getContextPath() + forward.replaceAll("redirect:", "");
+                log.debug("redirect : " + forward);
+                response.sendRedirect(forward);
 
             } else {
-                log.debug(forward);
-                request.getRequestDispatcher(forward.replaceAll("forward:", ""))
+                forward = request.getContextPath() + forward.replaceAll("forward:", "");
+                log.debug("forward: " + forward);
+                request.getRequestDispatcher(forward)
                         .forward(request, response);
             }
         }

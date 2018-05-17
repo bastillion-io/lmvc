@@ -94,7 +94,7 @@ public class SecurityFilter implements Filter {
         log.debug("CSRF token is invalid for " + httpServletRequest.getRequestURL());
         httpServletRequest.getSession().invalidate();
         log.debug("Session invalidated");
-        httpServletResponse.sendRedirect("/");
+        httpServletResponse.sendRedirect(httpServletRequest.getContextPath());
     }
 
     public void destroy() {
