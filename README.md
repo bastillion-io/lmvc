@@ -1,10 +1,23 @@
 # lmvc
-Model-View-Controller Framework
+Loophole - Model-View-Controller Framework
 
 Prerequisites
 -------------
-* Java JDK 1.9 or greater
-http://www.oracle.com/technetwork/java/javase/downloads/index.html
+**Open-JDK / Oracle-JDK - 1.9 or greater**
+
+> apt-get install openjdk-9-jdk
+
+or
+
+> http://www.oracle.com/technetwork/java/javase/downloads/index.html
+
+**Maven 3 or greater**  *(Only needed if building from source)*
+
+> apt-get install maven
+
+or 
+
+> http://maven.apache.org 
 
 Build and Install
 ------
