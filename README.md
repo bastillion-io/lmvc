@@ -11,7 +11,7 @@ or
 
 > http://www.oracle.com/technetwork/java/javase/downloads/index.html
 
-**Maven 3 or greater**  *(Only needed if building from source)*
+**Maven 3 or greater**
 
 > apt-get install maven
 
