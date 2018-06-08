@@ -66,6 +66,7 @@ public class TemplateConfig implements ServletContextListener {
 		resolver.setTemplateMode(TemplateMode.HTML);
 		resolver.setCacheable(true);
 		resolver.setCacheTTLMs(60000L);
+		resolver.setCharacterEncoding("UTF-8");
 		return resolver;
 	}
 	
