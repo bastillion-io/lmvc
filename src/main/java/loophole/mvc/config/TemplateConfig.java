@@ -64,6 +64,8 @@ public class TemplateConfig implements ServletContextListener {
 		resolver.setPrefix("/");
 		resolver.setSuffix(TemplateServlet.VIEW_EXT);
 		resolver.setTemplateMode(TemplateMode.HTML);
+		resolver.setCacheable(true);
+		resolver.setCacheTTLMs(60000L);
 		return resolver;
 	}
 	
