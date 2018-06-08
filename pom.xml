@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>loophole.mvc</groupId>
     <artifactId>lmvc</artifactId>
-    <version>1.00.01-SNAPSHOT</version>
+    <version>1.00.01</version>
     <packaging>jar</packaging>
     <name>lmvc</name>
     <properties>
