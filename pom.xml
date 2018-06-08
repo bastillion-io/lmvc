@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>loophole.mvc</groupId>
     <artifactId>lmvc</artifactId>
-    <version>1.00.00</version>
+    <version>1.00.01-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>lmvc</name>
     <properties>
@@ -83,6 +83,18 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.1.3.1</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>3.1.3</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
