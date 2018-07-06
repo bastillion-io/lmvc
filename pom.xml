@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>loophole.mvc</groupId>
     <artifactId>lmvc</artifactId>
-    <version>1.00.01</version>
+    <version>1.01.00</version>
     <packaging>jar</packaging>
     <name>lmvc</name>
     <properties>
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.thymeleaf</groupId>
             <artifactId>thymeleaf</artifactId>
-            <version>3.0.8.RELEASE</version>
+            <version>3.0.9.RELEASE</version>
         </dependency>
 
         <!-- provided dependencies -->
