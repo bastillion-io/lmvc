@@ -5,17 +5,13 @@ Prerequisites
 -------------
 **Open-JDK / Oracle-JDK - 1.9 or greater**
 
-> apt-get install openjdk-9-jdk
-
-or
+*apt-get install openjdk-9-jdk*
 
 > http://www.oracle.com/technetwork/java/javase/downloads/index.html
 
 **Maven 3 or greater**
 
-> apt-get install maven
-
-or 
+*apt-get install maven*
 
 > http://maven.apache.org 
 
