@@ -32,42 +32,26 @@ import loophole.mvc.base.TemplateServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
 /**
- * Filter that prevents click jacking, enforces transport security, etc..
+ * Filter to check for a CSRF token and protect application from cross-site scripting attacks.
  */
-@WebFilter(urlPatterns = {"/*"})
-public class SecurityFilter implements Filter {
+@WebFilter(urlPatterns = {"/", "*" + DispatcherServlet.CTR_EXT, "*" + TemplateServlet.VIEW_EXT})
+public class CSRFFilter implements Filter {
 
-	private static Logger log = LoggerFactory.getLogger(SecurityFilter.class);
+	private static Logger log = LoggerFactory.getLogger(CSRFFilter.class);
 
 	// csrf parameter and session name
 	public static final String _CSRF = "_csrf";
 	private static final SecureRandom random = new SecureRandom();
 
-	// x-frame-options header
-	private static final String CSP_HEADER = "Content-Security-Policy";
-	private static final String CSP_VALUE = "frame-ancestors 'self';";
-
-	// disable MIME sniffing
-	private static final String X_CONTENT_TYPE_HEADER = "X-Content-Type-Options";
-	private static final String X_CONTENT_TYPE_VALUE = "nosniff";
-
-	// prevent cross-site scripting
-	private static final String X_XSS_PROTECT_HEADER = "X-XSS-Protection";
-	private static final String X_XSS_PROTECT_VALUE = "1; mode=block";
-
-	// strict-transport-security header
-	private static final String TRANSPORT_SECURITY_HEADER = "Strict-Transport-Security";
-	private static final String TRANSPORT_SECURITY_VALUE = "max-age=31536000";
 
 	public void init(FilterConfig filterConfig) {
 	}
@@ -75,26 +59,26 @@ public class SecurityFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
 			throws IOException, ServletException {
 
+		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
-		// click jacking header
-		httpServletResponse.addHeader(CSP_HEADER, CSP_VALUE);
-
-		// disable MIME sniffing
-		httpServletResponse.addHeader(X_CONTENT_TYPE_HEADER, X_CONTENT_TYPE_VALUE);
-
-		// block cross-site scripting
-		httpServletResponse.addHeader(X_XSS_PROTECT_HEADER, X_XSS_PROTECT_VALUE);
-
-		// disable MIME sniffing
-		httpServletResponse.addHeader(X_CONTENT_TYPE_HEADER, X_CONTENT_TYPE_VALUE);
-
-		// transport security header
-		httpServletResponse.addHeader(TRANSPORT_SECURITY_HEADER, TRANSPORT_SECURITY_VALUE);
-
-
-		filterChain.doFilter(request, response);
-
+		// csrf check
+		log.debug("CSRF parameter token is " + request.getParameter(_CSRF));
+		log.debug("CSRF sesson token is " + httpServletRequest.getSession().getAttribute(_CSRF));
+		String _csrf = (String) httpServletRequest.getSession().getAttribute(_CSRF);
+		if (_csrf == null || _csrf.equals(request.getParameter(_CSRF))) {
+			log.debug("CSRF token is valid for " + httpServletRequest.getRequestURL());
+			if (_csrf == null || httpServletRequest.getMethod().equalsIgnoreCase("POST")) {
+				_csrf = (new BigInteger(165, random)).toString(36).toUpperCase();
+				httpServletRequest.getSession().setAttribute(_CSRF, _csrf);
+			}
+			filterChain.doFilter(request, response);
+			return;
+		}
+		log.debug("CSRF token is invalid for " + httpServletRequest.getRequestURL());
+		httpServletRequest.getSession().invalidate();
+		log.debug("Session invalidated");
+		httpServletResponse.sendRedirect(httpServletRequest.getContextPath());
 	}
 
 	public void destroy() {
