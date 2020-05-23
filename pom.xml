@@ -44,6 +44,12 @@
             <version>3.0.11.RELEASE</version>
         </dependency>
 
+        <dependency>
+            <groupId>ognl</groupId>
+            <artifactId>ognl</artifactId>
+            <version>3.2.14</version>
+        </dependency>
+
         <!-- provided dependencies -->
         <dependency>
             <groupId>javax.servlet</groupId>
