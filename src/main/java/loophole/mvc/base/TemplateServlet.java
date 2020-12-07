@@ -27,42 +27,49 @@
  */
 package loophole.mvc.base;
 
-import loophole.mvc.config.TemplateConfig;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
+import java.io.IOException;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+
+import org.apache.commons.lang3.StringUtils;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.WebContext;
+
+import loophole.mvc.config.TemplateConfig;
 
 @WebServlet("*" + TemplateServlet.VIEW_EXT)
 public class TemplateServlet extends HttpServlet {
 
-    public static final String VIEW_EXT = ".html";
-    private static final long serialVersionUID = 411L;
+	public static final String VIEW_EXT = ".html";
+	private static final long serialVersionUID = 411L;
 
-    public TemplateServlet() {
-        super();
-    }
+	public TemplateServlet() {
+		super();
+	}
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        TemplateEngine engine = TemplateConfig.getTemplateEngine(request.getServletContext());
-        WebContext context = new WebContext(request, response, request.getServletContext());
-        context.getResponse().setContentType("text/html; charset=UTF-8");
-        String uri = request.getRequestURI().replaceAll("\\" + TemplateServlet.VIEW_EXT + ".*", TemplateServlet.VIEW_EXT)
-                .replaceAll("^" + request.getContextPath(), "");
-        engine.process(uri, context, response.getWriter());
-    }
+		TemplateEngine engine = TemplateConfig.getTemplateEngine(request.getServletContext());
+		WebContext context = new WebContext(request, response, request.getServletContext());
+		context.getResponse().setContentType("text/html; charset=UTF-8");
+		String uri = request.getRequestURI()
+				.replaceAll("\\" + TemplateServlet.VIEW_EXT + ".*", TemplateServlet.VIEW_EXT)
+				.replaceAll("^" + request.getContextPath(), "");
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+		if (StringUtils.equals("/", uri)) {
+			uri = "/index.html";
+		}
 
-        doGet(request, response);
-    }
+		engine.process(uri, context, response.getWriter());
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+		doGet(request, response);
+	}
 }
