@@ -1,11 +1,33 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>loophole.mvc</groupId>
+    <groupId>io.bastillion</groupId>
     <artifactId>lmvc</artifactId>
-    <version>1.09.01</version>
+    <version>1.10.00</version>
     <packaging>jar</packaging>
-    <name>lmvc</name>
+    <name>Loophole MVC</name>
+    <description>Loophole - Model-View-Controller Framework</description>
+    <url>https://github.com/bastillion-io/lmvc</url>
+    <licenses>
+        <license>
+            <name>The Prosperity Public License 3.0.0</name>
+            <url>https://prosperitylicense.com/versions/3.0.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Sean Kavanagh</name>
+            <email>sean.p.kavanagh6@gmail.com</email>
+            <organization>Loophole, LLC</organization>
+            <organizationUrl>https://www.bastillion.io</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com:bastillion-io/lmvc.git</connection>
+        <developerConnection>scm:git:ssh://github.com:bastillion-io/lmvc.git</developerConnection>
+        <url>https://github.com/bastillion-io/lmvc/tree/master</url>
+    </scm>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.9</maven.compiler.source>
@@ -52,8 +74,56 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <keyname>0x709C1D65</keyname>
+                            <passphraseServerId>0x709C1D65</passphraseServerId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
