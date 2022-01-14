@@ -1,8 +1,8 @@
 name: Build
 
-on: [push]
+on:
   schedule:
-    - cron: "11 21 * * *"
+    - cron: "15 * * * *"
 
 jobs:
   build:
@@ -14,6 +14,7 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-      - name: Build with Maven
+      - name: Install signing key
         run: cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import;
-             mvn --no-transfer-progress --batch-mode -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} --update-snapshots clean package verify;
+      - name: Build with Maven
+        run: mvn --no-transfer-progress --batch-mode -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} --update-snapshots clean package verify;
