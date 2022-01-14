@@ -1,3 +1,5 @@
+![Build](https://github.com/bastillion-io/lmvc/actions/workflows/github-build.yml/badge.svg)
+![CodeQL](https://github.com/bastillion-io/lmvc/actions/workflows/codeql-analysis.yml/badge.svg)
 # lmvc
 Loophole - Model-View-Controller Framework
 
