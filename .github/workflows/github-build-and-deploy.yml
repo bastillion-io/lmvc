@@ -1,6 +1,9 @@
 name: Build & Deploy
 
-on: [push]
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
