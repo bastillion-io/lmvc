@@ -1,4 +1,4 @@
-name: Loophole MVC
+name: Build & Deploy
 
 on: [push]
 
