@@ -94,9 +94,6 @@
                             <goal>sign</goal>
                         </goals>
                         <configuration>
-                            <gpgArguments>
-                                <arg>loopback</arg>
-                            </gpgArguments>
                             <keyname>0x709C1D65</keyname>
                             <passphraseServerId>0x709C1D65</passphraseServerId>
                         </configuration>
