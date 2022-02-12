@@ -1,7 +1,7 @@
 /**
- *    Copyright (C) 2018 Loophole, LLC
- *
- *    Licensed under The Prosperity Public License 3.0.0
+ * Copyright (C) 2018 Loophole, LLC
+ * <p>
+ * Licensed under The Prosperity Public License 3.0.0
  */
 package loophole.mvc.base;
 
@@ -13,12 +13,25 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.lang.reflect.*;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Base controller class that initializes all controllers and is called through
@@ -46,7 +59,7 @@ public class BaseKontroller {
                 for (File directory : dirs) {
                     loadKontrollers(directory, packageNm);
                 }
-            } catch (Exception ex) {
+            } catch (ClassNotFoundException | IOException ex) {
                 log.error(ex.toString(), ex);
             }
         }
@@ -96,7 +109,7 @@ public class BaseKontroller {
      *
      * @return page to forward / redirect
      */
-    public String execute() {
+    public String execute() throws ServletException {
         String forward = null;
 
         for (Class<?> clazz : ktrlList) {
@@ -161,10 +174,9 @@ public class BaseKontroller {
                                             request.setAttribute(v.name(), null);
                                             try {
                                                 request.setAttribute(v.name(), field.getType().getDeclaredConstructor().newInstance());
-                                            } catch (NoSuchMethodException ex){
-                                               //ignore exception
+                                            } catch (NoSuchMethodException ex) {
+                                                //ignore exception
                                             }
-
                                         }
                                     }
                                 }
@@ -173,8 +185,9 @@ public class BaseKontroller {
                             request.setAttribute("errors", ctrl.getErrors());
                             request.setAttribute("fieldErrors", ctrl.getFieldErrors());
 
-                        } catch (Exception ex) {
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException | ClassNotFoundException ex) {
                             log.error(ex.toString(), ex);
+                            throw new ServletException(ex.toString(), ex);
                         }
                     }
                 }
@@ -186,7 +199,7 @@ public class BaseKontroller {
     }
 
     private void setFieldFromParams(Object ctrl, String param, HttpServletRequest request)
-            throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
 
         if (param != null) {
 
@@ -212,18 +225,15 @@ public class BaseKontroller {
                                 for (String k : requestMap.keySet()) {
                                     Object keyOb = null;
                                     Object valOb = null;
-                                    try {
-                                        Class<?> theClass = Class.forName(keyType.getTypeName());
-                                        Constructor<?> cons = theClass.getConstructor(String.class);
-                                        keyOb = cons.newInstance(k);
+                                    Class<?> theClass = Class.forName(keyType.getTypeName());
+                                    Constructor<?> cons = theClass.getConstructor(String.class);
+                                    keyOb = cons.newInstance(k);
 
-                                        theClass = Class.forName(valueType.getTypeName());
-                                        cons = theClass.getConstructor(String.class);
-                                        valOb = cons.newInstance(requestMap.get(k));
-                                        log.debug("Setting " + param + " : " + keyOb + " -  " + valOb);
-                                    } catch (ClassNotFoundException ex) {
-                                        log.error(ex.toString(), ex);
-                                    }
+                                    theClass = Class.forName(valueType.getTypeName());
+                                    cons = theClass.getConstructor(String.class);
+                                    valOb = cons.newInstance(requestMap.get(k));
+                                    log.debug("Setting " + param + " : " + keyOb + " -  " + valOb);
+
                                     map.put(keyOb, valOb);
                                 }
                                 field.set(ctrl, map);
@@ -237,14 +247,11 @@ public class BaseKontroller {
                                 List list = List.class.cast(field.get(ctrl));
                                 for (String p : parameterMap.get(param)) {
                                     Object valOb = null;
-                                    try {
-                                        Class<?> theClass = Class.forName(valueType.getTypeName());
-                                        Constructor<?> cons = theClass.getConstructor(String.class);
-                                        valOb = cons.newInstance(p);
-                                        log.debug("Setting " + param + " : " + valOb);
-                                    } catch (ClassNotFoundException ex) {
-                                        log.error(ex.toString(), ex);
-                                    }
+                                    Class<?> theClass = Class.forName(valueType.getTypeName());
+                                    Constructor<?> cons = theClass.getConstructor(String.class);
+                                    valOb = cons.newInstance(p);
+                                    log.debug("Setting " + param + " : " + valOb);
+
                                     list.add(valOb);
                                 }
                                 field.set(ctrl, list);
@@ -290,7 +297,7 @@ public class BaseKontroller {
                                 field.set(ctrl, null);
                                 try {
                                     field.set(ctrl, field.getType().getDeclaredConstructor().newInstance());
-                                } catch (NoSuchMethodException ex){
+                                } catch (NoSuchMethodException ex) {
                                     //ignore exception
                                 }
                             }

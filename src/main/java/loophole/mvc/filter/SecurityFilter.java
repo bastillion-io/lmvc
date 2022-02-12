@@ -5,18 +5,14 @@
  */
 package loophole.mvc.filter;
 
-import loophole.mvc.base.DispatcherServlet;
-import loophole.mvc.base.TemplateServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -24,8 +20,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebFilter(urlPatterns = {"/*"})
 public class SecurityFilter implements Filter {
-
-	private static Logger log = LoggerFactory.getLogger(SecurityFilter.class);
 
 	// csrf parameter and session name
 	public static final String _CSRF = "_csrf";
