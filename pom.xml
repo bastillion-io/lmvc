@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.bastillion</groupId>
     <artifactId>lmvc</artifactId>
-    <version>1.10.7</version>
+    <version>1.10.8</version>
     <packaging>jar</packaging>
     <name>Loophole MVC</name>
     <description>Loophole - Model-View-Controller Framework</description>
