@@ -118,10 +118,12 @@
                  <executions>
                       <execution>
                            <id>attach-sources</id>
-                           <phase>package</phase>
                            <goals>
                                 <goal>jar</goal>
                            </goals>
+                           <configuration>
+                                <classifier>lmvc-src/classifier>
+                           </configuration>
                       </execution>
                 </executions>
             </plugin>
