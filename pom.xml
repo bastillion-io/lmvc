@@ -122,7 +122,7 @@
                                 <goal>jar</goal>
                            </goals>
                            <configuration>
-                                <classifier>lmvc-src/classifier>
+                                <classifier>lmvc-src</classifier>
                            </configuration>
                       </execution>
                 </executions>
