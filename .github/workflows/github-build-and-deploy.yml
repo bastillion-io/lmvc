@@ -68,5 +68,6 @@ jobs:
         run: |
           mvn --no-transfer-progress -B --update-snapshots \
             -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
-            clean deploY
+            clean deploy
+
 
