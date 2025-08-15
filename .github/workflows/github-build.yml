@@ -17,28 +17,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java and GPG
+      - name: Set up Java and import GPG
         uses: actions/setup-java@v4
         with:
-          distribution: temurin          # modern replacement for "adopt"
+          distribution: temurin
           java-version: '11'
           cache: maven
-          # Imports your private key and configures gpg-agent for CI
-          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}          # ASCII-armored private key block
-          gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} # passphrase
+          # MUST be an ASCII-armored **private** key block
+          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
-      # Ensure loopback pinentry is allowed for headless signing (belt & suspenders)
-      - name: Configure GPG for loopback
+      - name: Configure GPG (loopback) & show imported keys
+        id: gpg
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf
+          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf || true
           gpgconf --kill gpg-agent || true
-          # Sanity check: list the key (won't print secret material)
+
+          echo "== gpg secret keys =="
           gpg --batch --list-secret-keys --keyid-format LONG
 
-      - name: Build & verify (signs at verify phase)
+          # Extract the first usable signing key id (LONG form)
+          KEYID="$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="sec" {print $5; exit}')"
+          if [[ -z "${KEYID}" ]]; then
+            echo "No secret key found after import."
+            exit 1
+          fi
+          echo "Detected KEYID=${KEYID}"
+          echo "keyid=${KEYID}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & Verify (sign at verify)
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GPG_TTY: /dev/tty
         run: |
-          mvn --no-transfer-progress -B --update-snapshots clean verify
+          mvn --no-transfer-progress -B --update-snapshots \
+            -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
+            clean verify
