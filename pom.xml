@@ -82,23 +82,23 @@
     </distributionManagement>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.5</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                        <configuration>
-                            <keyname>0x709C1D65</keyname>
-                            <passphraseServerId>0x709C1D65</passphraseServerId>
-                        </configuration>
-                    </execution>
-                </executions>
+           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.5</version>
+           <executions>
+             <execution>
+               <id>sign-artifacts</id>
+               <phase>verify</phase>
+               <goals><goal>sign</goal></goals>
+               <configuration>
+                 <gpgArguments>
+                   <arg>--pinentry-mode</arg>
+                   <arg>loopback</arg>
+                 </gpgArguments>
+               </configuration>
+             </execution>
+           </executions>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
@@ -135,6 +135,7 @@
         </plugins>
     </build>
 </project>
+
 
 
 
