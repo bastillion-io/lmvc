@@ -3,27 +3,40 @@ name: Build & Deploy (Tag)
 on:
   push:
     tags:
-      - 'v*'            # only version tags; change to '*' if you truly want all tags
-  workflow_dispatch: {}  # optional: allow manual runs
+      - 'v*'               # push tags like v1.14.0
+  workflow_dispatch: {}     # optional manual trigger
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (with tags)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ensure tag metadata is available
 
       - name: Verify required secrets
+        env:
+          S1: ${{ secrets.OSSRH_USERNAME }}
+          S2: ${{ secrets.OSSRH_PASSWORD }}
+          S3: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          S4: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           missing=0
-          for v in OSSRH_USERNAME OSSRH_PASSWORD OSSRH_GPG_SECRET_KEY OSSRH_GPG_SECRET_KEY_PASSWORD; do
-            if [ -z "${{ secrets[$v] }}" ]; then
-              echo "::error::Missing required secret: $v"
-              missing=1
-            fi
-          done
-          [ "$missing" -eq 0 ] || exit 1
+          [ -n "${S1:-}" ] || { echo "::error::Missing secret OSSRH_USERNAME"; missing=1; }
+          [ -n "${S2:-}" ] || { echo "::error::Missing secret OSSRH_PASSWORD"; missing=1; }
+          [ -n "${S3:-}" ] || { echo "::error::Missing secret OSSRH_GPG_SECRET_KEY"; missing=1; }
+          [ -n "${S4:-}" ] || { echo "::error::Missing secret OSSRH_GPG_SECRET_KEY_PASSWORD"; missing=1; }
+          [ "$missing" -eq 0 ]
 
       - name: Set up Java, Maven servers, and import GPG
         uses: actions/setup-java@v4
@@ -31,11 +44,11 @@ jobs:
           distribution: temurin
           java-version: '11'
           cache: maven
-          # This writes <servers> to ~/.m2/settings.xml with id=ossrh
+          # Writes <server id="ossrh"> with creds into ~/.m2/settings.xml
           server-id: ossrh
           server-username: OSSRH_USERNAME
           server-password: OSSRH_PASSWORD
-          # Import the CI signing key & wire gpg-agent
+          # Import the CI signing key & configure gpg-agent
           gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
           gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
@@ -71,6 +84,26 @@ jobs:
               --clearsign /tmp/sign.txt > /tmp/sign.txt.asc
           head -n 3 /tmp/sign.txt.asc || true
 
+      - name: Derive version from tag and sync POM (no commit)
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:-}"
+          if [[ -z "$TAG" ]]; then
+            echo "::error::No tag name in context."
+            exit 1
+          fi
+          VERSION="${TAG#v}"   # strip leading 'v'
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Could not derive version from tag: $TAG"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG  → Version: $VERSION"
+          # Set the build version without modifying the repo
+          mvn -q -B versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+
       - name: Build & Deploy to Sonatype (staging)
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
@@ -79,4 +112,5 @@ jobs:
         run: |
           mvn --no-transfer-progress -B --update-snapshots \
             -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
+            -DautoReleaseAfterClose=true \
             clean deploy
