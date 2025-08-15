@@ -96,12 +96,11 @@
                    <arg>--pinentry-mode</arg>
                    <arg>loopback</arg>
                  </gpgArguments>
-                 <!-- key is provided at runtime via -Dgpg.keyname -->
                </configuration>
              </execution>
            </executions>
            </plugin>
-            <plugin>
+           <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
                 <version>1.7.0</version>
@@ -136,6 +135,7 @@
         </plugins>
     </build>
 </project>
+
 
 
 
