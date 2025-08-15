@@ -6,77 +6,40 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  schedule:
-    - cron: "15 * * * *"   # hourly (UTC)
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java and import GPG
+      - name: Set up Java + import GPG
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '11'
           cache: maven
-          # MUST be an ASCII-armored PRIVATE key block (-----BEGIN PGP PRIVATE KEY BLOCK-----)
           gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
           gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
-      - name: Configure GPG + detect signing subkey
-        id: gpg
-        shell: bash
-        env:
-          GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+      - name: Allow loopback pinentry + show key
         run: |
-          set -euo pipefail
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf || true
           gpgconf --kill gpg-agent || true
+          gpg --batch --list-secret-keys --keyid-format LONG
 
-          echo "== Secret keys (long IDs) =="
-          gpg --batch --list-secret-keys --keyid-format LONG || true
-          echo "== Machine-readable =="
-          gpg --batch --with-colons --list-secret-keys || true
-
-          # Pick a signing-capable subkey first; fall back to primary if it can sign.
-          #  - 'ssb' lines are subkeys, field 12 has capability flags (e.g., 's', 'e', 'a', 'c')
-          #  - 'sec' is the primary key; use it only if it has 's'
-          SIGNING_KEYID="$(gpg --batch --with-colons --list-secret-keys \
-            | awk -F: '$1=="ssb" && $12 ~ /s/ {print $5; exit}')"
-
-          if [[ -z "${SIGNING_KEYID:-}" ]]; then
-            SIGNING_KEYID="$(gpg --batch --with-colons --list-secret-keys \
-              | awk -F: '$1=="sec" && $12 ~ /s/ {print $5; exit}')"
-          fi
-
-          if [[ -z "${SIGNING_KEYID:-}" ]]; then
-            echo "No signing-capable secret key found. (No 's' flag on sec/ssb.)"
-            echo "HINT: Create a CI signing subkey, or export a non-hardware, non-expired key with signing capability."
-            exit 1
-          fi
-
-          echo "Detected signing key: ${SIGNING_KEYID}"
-          echo "keyid=${SIGNING_KEYID}" >> "$GITHUB_OUTPUT"
-
-          # PROVE we can actually sign (fail fast if unusable/expired/locked)
-          echo "test" > /tmp/sign.txt
-          gpg --batch --yes \
-              --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
-              --local-user "${SIGNING_KEYID}" --clearsign /tmp/sign.txt > /tmp/sign.txt.asc
-          echo "Clearsign OK:"
-          head -n 3 /tmp/sign.txt.asc || true
-
-      - name: Build & Verify (Maven signs at verify phase)
+      - name: Build & Verify (Maven signs at verify)
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
-          GPG_TTY: /dev/tty
         run: |
+          KEYID=$(gpg --batch --with-colons --list-secret-keys \
+            | awk -F: '($1=="ssb" && $12 ~ /s/) || ($1=="sec" && $12 ~ /s/){print $5; exit}')
+          if [ -z "$KEYID" ]; then
+            echo "::error::No signing-capable secret key found in CI keyring."
+            exit 1
+          fi
           mvn --no-transfer-progress -B --update-snapshots \
-            -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
+            -Dgpg.keyname="$KEYID" \
             clean verify
