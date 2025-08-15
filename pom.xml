@@ -82,10 +82,10 @@
     </distributionManagement>
     <build>
         <plugins>
-           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.2.5</version>
+         <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-gpg-plugin</artifactId>
+           <version>3.2.5</version>
            <executions>
              <execution>
                <id>sign-artifacts</id>
@@ -96,10 +96,11 @@
                    <arg>--pinentry-mode</arg>
                    <arg>loopback</arg>
                  </gpgArguments>
+                 <!-- key is provided at runtime via -Dgpg.keyname -->
                </configuration>
              </execution>
            </executions>
-            </plugin>
+           </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -135,6 +136,7 @@
         </plugins>
     </build>
 </project>
+
 
 
 
