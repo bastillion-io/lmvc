@@ -27,4 +27,5 @@ Export environment variables
 
 In the directory that contains the pom.xml run
 
-        mvn clean package install
+    mvn clean package install
+
