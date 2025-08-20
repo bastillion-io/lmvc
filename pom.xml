@@ -29,9 +29,9 @@
         <url>https://github.com/bastillion-io/lmvc/tree/master</url>
     </scm>
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.9</maven.compiler.source>
-        <maven.compiler.target>1.9</maven.compiler.target>
+       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+       <maven.compiler.source>17</maven.compiler.source>
+       <maven.compiler.target>17</maven.compiler.target>
     </properties>
     <dependencies>
         <dependency>
@@ -84,26 +84,8 @@
     </distributionManagement>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.5</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals><goal>sign</goal></goals>
-                        <configuration>
-                            <gpgArguments>
-                                <arg>--pinentry-mode</arg>
-                                <arg>loopback</arg>
-                            </gpgArguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
+        <plugins>        
+ 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -115,6 +97,11 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
+                    <configuration>
+                      <failOnError>false</failOnError>
+                      <show>public</show> <!-- Only generate Javadoc for public classes/methods -->
+                      <additionalJOption>-Xdoclint:none</additionalJOption> <!-- Suppresses doclint (JDK 8+) -->
+                    </configuration>
                 </executions>
             </plugin>
 
@@ -156,3 +143,4 @@
         </plugins>
     </build>
 </project>
+
