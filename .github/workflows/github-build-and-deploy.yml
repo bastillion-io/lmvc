@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
           cache: maven
           # This writes <server id="ossrh"> with id=ossrh
           server-id: ossrh
@@ -69,6 +69,7 @@ jobs:
           mvn --no-transfer-progress -X -B --update-snapshots \
             -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
             clean deploy
+
 
 
 
