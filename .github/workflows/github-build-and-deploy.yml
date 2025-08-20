@@ -66,9 +66,10 @@ jobs:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         run: |
-          mvn --no-transfer-progress -X -B --update-snapshots \
+          mvn --no-transfer-progress -B --update-snapshots \
             -Dgpg.keyname='${{ steps.gpg.outputs.keyid }}' \
             clean deploy
+
 
 
 
