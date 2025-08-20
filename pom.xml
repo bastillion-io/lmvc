@@ -97,12 +97,12 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
-                    <configuration>
-                      <failOnError>false</failOnError>
-                      <show>public</show> <!-- Only generate Javadoc for public classes/methods -->
-                      <additionalJOption>-Xdoclint:none</additionalJOption> <!-- Suppresses doclint (JDK 8+) -->
-                    </configuration>
                 </executions>
+                <configuration>
+                  <failOnError>false</failOnError>
+                  <show>public</show> <!-- Only generate Javadoc for public classes/methods -->
+                  <additionalJOption>-Xdoclint:none</additionalJOption> <!-- Suppresses doclint (JDK 8+) -->
+                </configuration>
             </plugin>
 
             <plugin>
@@ -143,4 +143,5 @@
         </plugins>
     </build>
 </project>
+
 
