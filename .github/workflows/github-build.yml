@@ -27,9 +27,10 @@ jobs:
           java-version: '17'
           cache: maven
 
-      # Import GPG only when secrets are present AND this isn't a forked PR
+      # Import GPG only for trusted contexts (not forked PRs).
+      # Don't reference the `secrets` context in this `if:`.
       - name: Import GPG (trusted contexts only)
-        if: ${{ secrets.OSSRH_GPG_SECRET_KEY != '' && secrets.OSSRH_GPG_SECRET_KEY_PASSWORD != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -39,7 +40,7 @@ jobs:
           gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
       - name: Configure pinentry & show key (trusted only)
-        if: ${{ secrets.OSSRH_GPG_SECRET_KEY != '' && secrets.OSSRH_GPG_SECRET_KEY_PASSWORD != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
           echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf || true
@@ -47,7 +48,7 @@ jobs:
           echo "=== Secret keys in CI keyring (if any) ==="
           gpg --batch --list-secret-keys --keyid-format LONG || true
 
-      # Decide if we can sign (i.e., a signing-capable key is present)
+      # Decide if a signing-capable key is present (works in all contexts)
       - name: Decide whether we can sign
         id: signable
         shell: bash
@@ -60,6 +61,7 @@ jobs:
 
       - name: Build & Verify (sign if possible, otherwise skip)
         env:
+          # Passphrase will only exist in trusted contexts where secrets are injected
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
         shell: bash
         run: |
