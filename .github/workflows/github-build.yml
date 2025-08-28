@@ -6,6 +6,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: "30 * * * *"
 
 jobs:
   build:
@@ -14,8 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Java + import GPG
-        uses: actions/setup-java@v4
+      - name: Set up Java (always)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # Only import the GPG key when secrets are available AND the PR is from this repo
+      - name: Import GPG (trusted contexts only)
+        if: ${{ secrets.OSSRH_GPG_SECRET_KEY != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -23,24 +34,28 @@ jobs:
           gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
           gpg-passphrase:  ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
-      - name: Allow loopback pinentry + show key
+      - name: Allow loopback pinentry + show key (trusted only)
+        if: ${{ secrets.OSSRH_GPG_SECRET_KEY != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
           echo 'allow-loopback-pinentry' >> ~/.gnupg/gpg-agent.conf || true
           gpgconf --kill gpg-agent || true
           gpg --batch --list-secret-keys --keyid-format LONG
 
-      - name: Build & Verify (Maven signs at verify)
+      - name: Build & Verify (sign if possible, otherwise skip)
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
         run: |
           KEYID=$(gpg --batch --with-colons --list-secret-keys \
             | awk -F: '($1=="ssb" && $12 ~ /s/) || ($1=="sec" && $12 ~ /s/){print $5; exit}')
-          if [ -z "$KEYID" ]; then
-            echo "::error::No signing-capable secret key found in CI keyring."
-            exit 1
+          if [ -n "$KEYID" ]; then
+            echo "Signing with key $KEYID"
+            mvn --no-transfer-progress -B --update-snapshots \
+              -Dgpg.keyname="$KEYID" \
+              clean verify
+          else
+            echo "No signing key in this context; skipping GPG signing."
+            mvn --no-transfer-progress -B --update-snapshots \
+              -Dgpg.skip=true \
+              clean verify
           fi
-          mvn --no-transfer-progress -B --update-snapshots \
-            -Dgpg.keyname="$KEYID" \
-            clean verify
-
