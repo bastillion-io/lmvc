@@ -5,16 +5,16 @@
  */
 package loophole.mvc.base;
 
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import loophole.mvc.config.TemplateConfig;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.WebContext;
 import org.thymeleaf.web.IWebExchange;
-import org.thymeleaf.web.servlet.JavaxServletWebApplication;
+import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebServlet("*" + TemplateServlet.VIEW_EXT)
@@ -32,8 +32,8 @@ public class TemplateServlet extends HttpServlet {
             throws IOException {
 
         TemplateEngine engine = TemplateConfig.getTemplateEngine(request.getServletContext());
-        JavaxServletWebApplication application =
-                JavaxServletWebApplication.buildApplication(request.getServletContext());
+        JakartaServletWebApplication application =
+                JakartaServletWebApplication.buildApplication(request.getServletContext());
         response.setContentType("text/html; charset=UTF-8");
 
         final IWebExchange webExchange = application.buildExchange(request, response);

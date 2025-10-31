@@ -5,17 +5,16 @@
  */
 package loophole.mvc.config;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.annotation.WebListener;
 import loophole.mvc.base.TemplateServlet;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ITemplateResolver;
 import org.thymeleaf.templateresolver.WebApplicationTemplateResolver;
-import org.thymeleaf.web.servlet.JavaxServletWebApplication;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
+import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
 @WebListener
 public class TemplateConfig implements ServletContextListener {
@@ -39,7 +38,7 @@ public class TemplateConfig implements ServletContextListener {
 	}
 
 	private ITemplateResolver templateResolver(ServletContext servletContext) {
-		JavaxServletWebApplication webApp = JavaxServletWebApplication.buildApplication(servletContext);
+        JakartaServletWebApplication webApp = JakartaServletWebApplication.buildApplication(servletContext);
 		WebApplicationTemplateResolver resolver = new WebApplicationTemplateResolver(webApp);
 		resolver.setPrefix("/");
 		resolver.setSuffix(TemplateServlet.VIEW_EXT);
